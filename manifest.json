@@ -7,7 +7,8 @@
       "activeTab",
       "storage",
       "scripting",
-      "clipboardWrite"
+      "clipboardWrite",
+      "tabs"
     ],
     "host_permissions": [
       "<all_urls>"
@@ -32,6 +33,10 @@
       "type": "module"
     },
     "content_scripts": [
+      {
+        "matches": ["*://*.instacart.com/*"],
+        "js": ["content/instacart-content.js"]
+      },
       {
         "matches": ["<all_urls>"],
         "js": ["content/content.js"],

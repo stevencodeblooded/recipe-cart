@@ -350,8 +350,9 @@ function setMultiplier(multiplier, updateRecipe = true) {
 }
 
 /**
- * Send ingredients to Instacart
+ * Send ingredients to Instacart using bridge page
  */
+
 async function sendToInstacart() {
   if (!currentRecipe) {
     showNotification('No recipe loaded. Please extract a recipe first.');
@@ -361,7 +362,7 @@ async function sendToInstacart() {
   showState(loadingState);
   
   try {
-    // Collect selected ingredients (or all if none selected)
+    // Collect selected ingredients
     const checkboxes = document.querySelectorAll('.ingredient-checkbox');
     const selectedIndices = [];
     
@@ -378,29 +379,43 @@ async function sendToInstacart() {
     
     // Format selected ingredients
     const selectedIngredients = indices.map(i => {
-      return formatIngredient(
-        currentRecipe.ingredients[i], 
-        currentMeasurementSystem, 
-        currentMultiplier
-      );
+      const ingredient = currentRecipe.ingredients[i];
+      return formatIngredient(ingredient, currentMeasurementSystem, currentMultiplier);
     });
     
-    // Send to Instacart via background script
-    const response = await chrome.runtime.sendMessage({
-      action: 'addToInstacart',
-      ingredients: selectedIngredients,
-      measurementSystem: currentMeasurementSystem,
-      multiplier: currentMultiplier
+    // Create search terms focusing on the main ingredient name
+    const searchTerms = selectedIngredients.map(ingredient => {
+      let searchTerm = ingredient.name;
+      // Remove any additional descriptors
+      searchTerm = searchTerm.replace(/\(.*?\)/g, '').trim();
+      return encodeURIComponent(searchTerm);
     });
     
-    if (response && response.success) {
-      showState(successState);
-    } else {
-      throw new Error(response.error || 'Failed to add items to Instacart.');
+    if (searchTerms.length === 0) {
+      throw new Error('No ingredients selected.');
     }
+    
+    // Store the search terms in local storage for the content script to access
+    chrome.storage.local.set({
+      instacartSearchTerms: searchTerms,
+      instacartCurrentIndex: 0
+    });
+    
+    // Create a tab for the first search
+    chrome.tabs.create({
+      url: `https://www.instacart.com/store/search/${searchTerms[0]}`
+    });
+    
+    // Update success state message
+    showState(successState);
+    const successElement = document.querySelector('#success-state p');
+    if (successElement) {
+      successElement.textContent = `Add each item to your cart. After adding each item, you'll automatically see the next search.`;
+    }
+    
   } catch (error) {
     console.error('Instacart error:', error);
-    showErrorState(error.message || 'Failed to add items to Instacart.');
+    showErrorState(error.message || 'Failed to start Instacart shopping.');
   }
 }
 
