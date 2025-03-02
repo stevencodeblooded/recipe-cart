@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="250" fill="#FFFFFF" stroke="#FF6B35" stroke-width="12"/>
+  
+  <!-- Shopping Cart -->
+  <path d="M170 320H380C388.8 320 396 313.6 397.6 304.8L416 208H144L162.4 304.8C164 313.6 171.2 320 180 320H170Z" fill="#FF6B35"/>
+  <path d="M176 352C162.7 352 152 362.7 152 376C152 389.3 162.7 400 176 400C189.3 400 200 389.3 200 376C200 362.7 189.3 352 176 352Z" fill="#FF6B35"/>
+  <path d="M368 352C354.7 352 344 362.7 344 376C344 389.3 354.7 400 368 400C381.3 400 392 389.3 392 376C392 362.7 381.3 352 368 352Z" fill="#FF6B35"/>
+  <path d="M416 208H144L128 160H432L416 208Z" fill="#FF6B35"/>
+  
+  <!-- Recipe Book -->
+  <rect x="176" y="112" width="160" height="180" rx="8" fill="#4CAF50"/>
+  <rect x="192" y="128" width="128" height="16" rx="4" fill="#FFFFFF"/>
+  <rect x="192" y="152" width="128" height="8" rx="4" fill="#FFFFFF"/>
+  <rect x="192" y="168" width="96" height="8" rx="4" fill="#FFFFFF"/>
+  <rect x="192" y="184" width="128" height="8" rx="4" fill="#FFFFFF"/>
+  <rect x="192" y="200" width="80" height="8" rx="4" fill="#FFFFFF"/>
+  <rect x="192" y="216" width="112" height="8" rx="4" fill="#FFFFFF"/>
+  <rect x="192" y="232" width="64" height="8" rx="4" fill="#FFFFFF"/>
+  <rect x="192" y="248" width="96" height="8" rx="4" fill="#FFFFFF"/>
+  <rect x="192" y="264" width="128" height="8" rx="4" fill="#FFFFFF"/>
+</svg>

@@ -1,0 +1,60 @@
+/**
+ * RecipeCart - Content Styles
+ * Styling for any elements injected into recipe pages
+ */
+
+/* Highlight class for ingredients when selected */
+.recipe-cart-highlight {
+    background-color: rgba(255, 107, 53, 0.2);
+    transition: background-color 0.3s ease;
+  }
+  
+  /* RecipeCart button styles */
+  .recipe-cart-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #FF6B35;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 10000;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+  }
+  
+  .recipe-cart-button:hover {
+    transform: scale(1.1);
+    background-color: #FF8C61;
+  }
+  
+  .recipe-cart-button-icon {
+    font-size: 24px;
+  }
+  
+  /* Tooltip styles */
+  .recipe-cart-tooltip {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  
+  .recipe-cart-button:hover .recipe-cart-tooltip {
+    opacity: 1;
+  }

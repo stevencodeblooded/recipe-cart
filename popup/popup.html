@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RecipeCart</title>
+  <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="../lib/transitions.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header Section -->
+    <header class="app-header">
+      <div class="logo-container">
+        <img src="../assets/logo.svg" alt="RecipeCart Logo" class="logo">
+        <h1>RecipeCart</h1>
+      </div>
+      <div class="measurement-toggle">
+        <button id="toggle-us" class="toggle-btn toggle-active" data-system="us">US</button>
+        <button id="toggle-metric" class="toggle-btn" data-system="metric">Metric</button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="app-content">
+      <!-- Initial State - No Recipe -->
+      <div id="initial-state" class="state-container">
+        <div class="empty-state">
+          <img src="../assets/icon-128.png" alt="Empty State" class="empty-icon">
+          <h2>No Recipe Detected</h2>
+          <p>Visit a recipe page and click the button below to extract ingredients.</p>
+          <button id="extract-btn" class="primary-btn">Extract Ingredients</button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loading-state" class="state-container hidden">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Extracting ingredients...</p>
+        </div>
+      </div>
+
+      <!-- Error State -->
+      <div id="error-state" class="state-container hidden">
+        <div class="error-state">
+          <img src="../assets/error-icon.svg" alt="Error Icon" class="error-icon">
+          <h2>Oops!</h2>
+          <p id="error-message">We couldn't find any recipe ingredients on this page.</p>
+          <button id="try-again-btn" class="secondary-btn">Try Again</button>
+        </div>
+      </div>
+
+      <!-- Recipe Found State -->
+      <div id="recipe-state" class="state-container hidden">
+        <div class="recipe-header">
+          <h2 id="recipe-title">Recipe Title</h2>
+          <div class="multiplier-controls">
+            <button class="multiplier-btn multiplier-active" data-multiplier="1">1x</button>
+            <button class="multiplier-btn" data-multiplier="2">2x</button>
+            <button class="multiplier-btn" data-multiplier="3">3x</button>
+          </div>
+        </div>
+        
+        <div class="ingredients-container">
+          <ul id="ingredients-list" class="ingredients-list"></ul>
+        </div>
+
+        <div class="action-buttons">
+          <button id="send-to-instacart-btn" class="primary-btn">
+            <span class="btn-icon">🛒</span>
+            Send to Instacart
+          </button>
+          <button id="copy-all-btn" class="secondary-btn">
+            <span class="btn-icon">📋</span>
+            Copy All
+          </button>
+          <button id="save-recipe-btn" class="secondary-btn">
+            <span class="btn-icon">💾</span>
+            Save Recipe
+          </button>
+          <button id="reset-btn" class="tertiary-btn">
+            <span class="btn-icon">↺</span>
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Success State - After Instacart Integration -->
+      <div id="success-state" class="state-container hidden">
+        <div class="success-state">
+          <img src="../assets/success-icon.svg" alt="Success Icon" class="success-icon">
+          <h2>Success!</h2>
+          <p>All ingredients have been added to your Instacart cart.</p>
+          <a href="https://www.instacart.com/store/cart" target="_blank" class="primary-btn">
+            Go to Instacart
+          </a>
+          <button id="back-to-recipe-btn" class="secondary-btn">Back to Recipe</button>
+        </div>
+      </div>
+
+      <!-- Premium Feature Promotion State -->
+      <div id="premium-promo-state" class="state-container hidden">
+        <div class="premium-promo">
+          <img src="../assets/premium-icon.svg" alt="Premium Features" class="premium-icon">
+          <h2>Upgrade to Premium</h2>
+          <div class="premium-features-list">
+            <div class="premium-feature">
+              <span class="feature-icon">✨</span>
+              <div class="feature-text">
+                <h3>Batch Processing</h3>
+                <p>Extract multiple recipes at once</p>
+              </div>
+            </div>
+            <div class="premium-feature">
+              <span class="feature-icon">✨</span>
+              <div class="feature-text">
+                <h3>Smart Matching</h3>
+                <p>Better product recommendations</p>
+              </div>
+            </div>
+            <div class="premium-feature">
+              <span class="feature-icon">✨</span>
+              <div class="feature-text">
+                <h3>Auto Adjustments</h3>
+                <p>Scale recipes with precision</p>
+              </div>
+            </div>
+          </div>
+          <button id="upgrade-btn" class="premium-btn">Upgrade Now</button>
+          <button id="premium-close-btn" class="tertiary-btn">Maybe Later</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="app-footer">
+      <div class="saved-recipes-link">
+        <button id="saved-recipes-btn" class="link-btn">Saved Recipes</button>
+      </div>
+      <div class="app-version">v1.0.0</div>
+    </footer>
+  </div>
+
+  <!-- Saved Recipes Modal -->
+  <div id="saved-recipes-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Saved Recipes</h2>
+        <button id="close-modal-btn" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="no-saved-recipes" class="empty-state">
+          <p>You don't have any saved recipes yet.</p>
+        </div>
+        <ul id="saved-recipes-list" class="saved-recipes-list hidden"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="notification-toast" class="notification-toast hidden">
+    <span id="notification-message"></span>
+    <button id="close-notification-btn" class="close-notification-btn">&times;</button>
+  </div>
+
+  <!-- Load Scripts -->
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

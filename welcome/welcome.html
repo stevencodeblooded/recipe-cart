@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to RecipeCart</title>
+  <style>
+    :root {
+      --primary-color: #FF6B35;
+      --primary-hover: #FF8C61;
+      --secondary-color: #4CAF50;
+      --secondary-hover: #66BB6A;
+      --text-color: #333333;
+      --text-light: #666666;
+      --background-color: #FFFFFF;
+      --background-light: #F5F5F5;
+      --border-color: #E0E0E0;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text-color);
+      background-color: var(--background-light);
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .logo {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 20px;
+    }
+    
+    h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+      color: var(--primary-color);
+    }
+    
+    h2 {
+      font-size: 24px;
+      margin: 30px 0 15px;
+      color: var(--primary-color);
+    }
+    
+    p {
+      margin-bottom: 15px;
+    }
+    
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+    
+    .feature-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .feature-icon {
+      font-size: 32px;
+      margin-bottom: 15px;
+      color: var(--primary-color);
+    }
+    
+    .feature-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    
+    .steps {
+      background-color: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin: 30px 0;
+    }
+    
+    .step {
+      display: flex;
+      margin-bottom: 20px;
+      align-items: flex-start;
+    }
+    
+    .step:last-child {
+      margin-bottom: 0;
+    }
+    
+    .step-number {
+      background-color: var(--primary-color);
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 15px;
+      flex-shrink: 0;
+    }
+    
+    .step-content {
+      flex: 1;
+    }
+    
+    .step-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    
+    .screenshot {
+      width: 100%;
+      max-width: 500px;
+      display: block;
+      margin: 20px auto;
+      border-radius: 8px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-light);
+    }
+    
+    .button {
+      display: inline-block;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: 500;
+      margin-top: 10px;
+      transition: background-color 0.3s;
+    }
+    
+    .button:hover {
+      background-color: var(--primary-hover);
+    }
+    
+    .premium-banner {
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      color: #333;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 30px 0;
+      text-align: center;
+    }
+    
+    .premium-banner h3 {
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="../assets/logo.svg" alt="RecipeCart Logo" class="logo">
+      <h1>Welcome to RecipeCart!</h1>
+      <p>The easiest way to send recipe ingredients to Instacart</p>
+    </header>
+    
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <div class="feature-title">Extract Ingredients</div>
+        <p>Automatically detects and extracts ingredient lists from recipe websites.</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">🛒</div>
+        <div class="feature-title">Instacart Integration</div>
+        <p>Send ingredients directly to your Instacart cart with one click.</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <div class="feature-title">Convert Measurements</div>
+        <p>Switch between US customary and metric units easily.</p>
+      </div>
+    </div>
+    
+    <h2>How to Use RecipeCart</h2>
+    
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <div class="step-title">Visit a Recipe Website</div>
+          <p>Go to any recipe website with an ingredient list, like the example below.</p>
+          <img src="screenshots/recipe-example.png" alt="Recipe website example" class="screenshot">
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <div class="step-title">Open RecipeCart Extension</div>
+          <p>Click the RecipeCart icon in your browser's toolbar and click "Extract Ingredients".</p>
+          <img src="screenshots/extension-open.png" alt="Opening the extension" class="screenshot">
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <div class="step-title">View and Adjust Ingredients</div>
+          <p>Review the extracted ingredients, adjust quantities, and toggle between US and metric units.</p>
+          <img src="screenshots/ingredients-view.png" alt="Ingredients view" class="screenshot">
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-content">
+          <div class="step-title">Send to Instacart</div>
+          <p>Click "Send to Instacart" to add all ingredients to your Instacart cart.</p>
+          <img src="screenshots/instacart-integration.png" alt="Instacart integration" class="screenshot">
+        </div>
+      </div>
+    </div>
+    
+    <div class="premium-banner">
+      <h3>✨ Upgrade to Premium ✨</h3>
+      <p>Get access to advanced features like batch processing, smart product matching, and more!</p>
+      <a href="#" class="button">Learn More</a>
+    </div>
+    
+    <h2>Tips & Tricks</h2>
+    <p>
+      <strong>Save Favorite Recipes:</strong> You can save recipes for future reference by clicking the "Save Recipe" button. Access your saved recipes anytime from the popup.
+    </p>
+    <p>
+      <strong>Copy to Clipboard:</strong> If you prefer to use another service, you can copy all ingredients to your clipboard with one click.
+    </p>
+    <p>
+      <strong>Recipe Scaling:</strong> Use the 1x, 2x, and 3x buttons to scale recipes up or down depending on how many servings you need.
+    </p>
+    
+    <footer>
+      <p>Thank you for installing RecipeCart!</p>
+      <p>Version 1.0.0</p>
+    </footer>
+  </div>
+</body>
+</html>
