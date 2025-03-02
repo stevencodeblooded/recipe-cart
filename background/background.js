@@ -167,8 +167,6 @@ chrome.runtime.onInstalled.addListener(details => {
     const previousVersion = details.previousVersion;
     const currentVersion = chrome.runtime.getManifest().version;
     
-    // Log update
-    console.log(`Updated from ${previousVersion} to ${currentVersion}`);
   }
 });
 

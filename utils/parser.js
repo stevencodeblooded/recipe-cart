@@ -85,7 +85,10 @@ const conversionFactors = {
       return { amount, unit }; // Return original if can't convert
     }
     
-    // Normalize the unit (lowercase, singular)
+    // Store original unit format to preserve abbreviations
+    const originalFormat = unit;
+    
+    // Normalize the unit for calculation (lowercase, singular)
     const normalizedUnit = normalizeUnit(unit);
     
     // Determine the current system
@@ -93,46 +96,87 @@ const conversionFactors = {
     
     // If already in target system or system can't be determined, return as is
     if (currentSystem === targetSystem || currentSystem === 'unknown') {
-      return { amount, unit };
+      return { amount, unit: originalFormat };
     }
     
     // Convert based on the unit type
+    let result;
     if (currentSystem === 'us' && targetSystem === 'metric') {
-      return convertUSToMetric(numericAmount, normalizedUnit);
+      result = convertUSToMetric(numericAmount, normalizedUnit);
     } else if (currentSystem === 'metric' && targetSystem === 'us') {
-      return convertMetricToUS(numericAmount, normalizedUnit);
+      result = convertMetricToUS(numericAmount, normalizedUnit);
+    } else {
+      result = { amount: formatAmount(numericAmount), unit: originalFormat };
     }
     
-    // Default fallback
-    return { amount, unit };
+    return result;
   }
   
   /**
-   * Parse an amount string to a numeric value
-   * @param {string} amount - The amount to parse
-   * @returns {number} The numeric value
-   */
+ * Parse an amount string to a numeric value
+ * @param {string} amount - The amount to parse
+ * @returns {number} The numeric value
+ */
   export function parseAmount(amount) {
+    // Convert to string if it's not already
+    if (amount === null || amount === undefined) return 0;
+    
+    // Ensure amount is a string
+    const amountStr = String(amount);
+    
+    // Handle Unicode fraction characters
+    const fractionMap = {
+      '½': 0.5,
+      '⅓': 1/3,
+      '⅔': 2/3,
+      '¼': 0.25,
+      '¾': 0.75,
+      '⅕': 0.2,
+      '⅖': 0.4,
+      '⅗': 0.6,
+      '⅘': 0.8,
+      '⅙': 1/6,
+      '⅚': 5/6,
+      '⅛': 0.125,
+      '⅜': 0.375,
+      '⅝': 0.625,
+      '⅞': 0.875
+    };
+
+    // Replace Unicode fractions with decimal values
+    let processedAmount = amountStr;
+    for (const [fraction, value] of Object.entries(fractionMap)) {
+      if (processedAmount.includes(fraction)) {
+        // Handle cases like "1½" (mixed numbers)
+        const mixedMatch = processedAmount.match(new RegExp(`(\\d+)\\s*${fraction}`));
+        if (mixedMatch) {
+          return parseInt(mixedMatch[1], 10) + value;
+        }
+        // Handle simple fractions
+        processedAmount = processedAmount.replace(fraction, value.toString());
+      }
+    }
+    
     // Handle simple numeric values
-    if (!isNaN(parseFloat(amount))) {
-      return parseFloat(amount);
+    if (!isNaN(parseFloat(processedAmount))) {
+      return parseFloat(processedAmount);
     }
     
     // Handle fractions like "1/2"
-    const fractionMatch = amount.match(/(\d+)\/(\d+)/);
+    const fractionMatch = processedAmount.match(/(\d+)\/(\d+)/);
     if (fractionMatch) {
       return parseInt(fractionMatch[1], 10) / parseInt(fractionMatch[2], 10);
     }
     
     // Handle mixed numbers like "1 1/2"
-    const mixedMatch = amount.match(/(\d+)\s+(\d+)\/(\d+)/);
+    const mixedMatch = processedAmount.match(/(\d+)\s+(\d+)\/(\d+)/);
     if (mixedMatch) {
       return parseInt(mixedMatch[1], 10) + 
-             (parseInt(mixedMatch[2], 10) / parseInt(mixedMatch[3], 10));
+            (parseInt(mixedMatch[2], 10) / parseInt(mixedMatch[3], 10));
     }
     
     // Handle ranges like "1-2" (take the average)
-    const rangeMatch = amount.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/);
+    const rangeMatch = processedAmount.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/);
     if (rangeMatch) {
       return (parseFloat(rangeMatch[1]) + parseFloat(rangeMatch[2])) / 2;
     }
@@ -142,13 +186,22 @@ const conversionFactors = {
   }
   
   /**
-   * Format a numeric amount back to a human-readable string
-   * @param {number} amount - The numeric amount
-   * @returns {string} The formatted amount
-   */
-  export function formatAmount(amount) {
+ * Format a numeric amount back to a human-readable string
+ * @param {number} amount - The numeric amount
+ * @param {string} originalFormat - The original format (optional)
+ * @returns {string} The formatted amount
+ */
+  export function formatAmount(amount, originalFormat = null) {
     // Round to 2 decimal places for consistent output
     const rounded = Math.round(amount * 100) / 100;
+    
+    // If we have the original format and it uses Unicode fractions, try to match style
+    if (originalFormat) {
+      const usesUnicodeFractions = /[½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]/.test(originalFormat);
+      if (usesUnicodeFractions) {
+        return formatWithUnicodeFractions(rounded);
+      }
+    }
     
     // For whole numbers, return as integers
     if (Math.floor(rounded) === rounded) {
@@ -173,6 +226,58 @@ const conversionFactors = {
     // Otherwise return as decimal
     return rounded.toString();
   }
+
+  /**
+ * Format a number using Unicode fractions where possible
+ * @param {number} value - The value to format
+ * @returns {string} The formatted value with Unicode fractions
+ */
+  function formatWithUnicodeFractions(value) {
+    const wholePart = Math.floor(value);
+    const fractionalPart = value - wholePart;
+    
+    // Map of decimal values to Unicode fractions
+    const unicodeFractions = {
+      0.5: '½',
+      0.33: '⅓',
+      0.67: '⅔',
+      0.25: '¼',
+      0.75: '¾',
+      0.2: '⅕',
+      0.4: '⅖',
+      0.6: '⅗',
+      0.8: '⅘',
+      0.17: '⅙',
+      0.83: '⅚',
+      0.125: '⅛',
+      0.375: '⅜',
+      0.625: '⅝',
+      0.875: '⅞'
+    };
+    
+    // Find the closest fraction
+    let closestFraction = null;
+    let smallestDifference = 1;
+    
+    for (const [decimal, fraction] of Object.entries(unicodeFractions)) {
+      const difference = Math.abs(fractionalPart - parseFloat(decimal));
+      if (difference < smallestDifference) {
+        smallestDifference = difference;
+        closestFraction = fraction;
+      }
+    }
+    
+    if (smallestDifference > 0.05) {
+      // If no close fraction match, just use decimal
+      return value.toString();
+    }
+    
+    if (wholePart === 0) {
+      return closestFraction;
+    } else {
+      return `${wholePart}${closestFraction}`;
+    }
+  }
   
   /**
    * Normalize a unit string
@@ -185,12 +290,10 @@ const conversionFactors = {
     // Convert to lowercase
     let normalized = unit.toLowerCase().trim();
     
-    // Remove final 's' if plural
-    if (normalized.endsWith('s') && normalized !== 'tablespoons' && normalized !== 'teaspoons' && normalized !== 'cups' && normalized !== 'ounces') {
-      normalized = normalized.slice(0, -1);
-    }
+    // For display purposes, we should preserve the original format
+    // Only normalize for conversion calculations
     
-    // Handle common abbreviations
+    // Handle common abbreviations only for calculation purposes
     const abbreviations = {
       'tbsp': 'tablespoon',
       'tbl': 'tablespoon',
@@ -207,6 +310,7 @@ const conversionFactors = {
       'fl oz': 'fluid ounce'
     };
     
+    // Return the original format for display purposes
     return abbreviations[normalized] || normalized;
   }
   
@@ -355,12 +459,12 @@ const conversionFactors = {
   }
   
   /**
-   * Adjust ingredient amount based on multiplier
-   * @param {string} amount - The original amount
-   * @param {number} multiplier - The multiplier to apply (1, 2, or 3)
-   * @returns {string} The adjusted amount
-   */
-  export function adjustAmount(amount, multiplier) {
+ * Adjust ingredient amount based on multiplier
+ * @param {string} amount - The original amount
+ * @param {number} multiplier - The multiplier to apply
+ * @returns {string} The adjusted amount
+ */
+  function adjustAmount(amount, multiplier) {
     // Parse the amount to a number
     const numericAmount = parseAmount(amount);
     
@@ -376,25 +480,34 @@ const conversionFactors = {
   }
   
   /**
-   * Format an ingredient for display
-   * @param {object} ingredient - The ingredient object
-   * @param {string} system - The measurement system ('us' or 'metric')
-   * @param {number} multiplier - The multiplier to apply
-   * @returns {object} The formatted ingredient
-   */
+ * Format an ingredient for display
+ * @param {object} ingredient - The ingredient object
+ * @param {string} system - The measurement system ('us' or 'metric')
+ * @param {number} multiplier - The multiplier to apply
+ * @returns {object} The formatted ingredient
+ */
+
   export function formatIngredient(ingredient, system, multiplier) {
     const formatted = { ...ingredient };
     
-    // Apply multiplier to amount
+    // Apply the multiplier to the amount regardless of system
     if (formatted.amount) {
-      formatted.amount = adjustAmount(formatted.amount, multiplier);
+      const numericAmount = parseAmount(formatted.amount);
+      if (!isNaN(numericAmount)) {
+        const scaledAmount = numericAmount * multiplier;
+        formatted.amount = formatAmount(scaledAmount, formatted.amount);
+      }
     }
     
-    // Convert measurement system if needed
-    if (formatted.amount && formatted.unit && system) {
-      const converted = convertMeasurement(formatted.amount, formatted.unit, system);
-      formatted.amount = converted.amount;
-      formatted.unit = converted.unit;
+    // Only convert units if we're changing systems
+    const originalSystem = ingredient.system || 'us';
+    if (system !== originalSystem) {
+      // Convert to the requested system
+      if (formatted.amount && formatted.unit) {
+        const converted = convertMeasurement(formatted.amount, formatted.unit, system);
+        formatted.amount = converted.amount;
+        formatted.unit = converted.unit;
+      }
     }
     
     return formatted;

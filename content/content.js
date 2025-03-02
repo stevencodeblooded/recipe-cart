@@ -172,10 +172,8 @@ function extractRecipeTitle() {
 function extractWPRMIngredients() {
   const ingredients = [];
   
-  // Find WPRM ingredient containers (try various selectors)
+  // Find WPRM ingredient containers
   const ingredientItems = document.querySelectorAll('.wprm-recipe-ingredient, li.wprm-recipe-ingredient');
-  
-  console.log('WPRM ingredient elements found:', ingredientItems.length);
   
   if (ingredientItems.length === 0) {
     return ingredients;
@@ -188,24 +186,17 @@ function extractWPRMIngredients() {
     const nameEl = item.querySelector('.wprm-recipe-ingredient-name');
     const notesEl = item.querySelector('.wprm-recipe-ingredient-notes');
     
-    if (amountEl || unitEl || nameEl) {
-      const ingredient = {
-        amount: amountEl ? amountEl.textContent.trim() : '',
-        unit: unitEl ? unitEl.textContent.trim() : '',
-        name: nameEl ? nameEl.textContent.trim() : '',
-        notes: notesEl ? notesEl.textContent.trim() : '',
-        original: item.textContent.trim()
-      };
-      
-      ingredients.push(ingredient);
-    } else {
-      // If structured elements not found, use the text content
-      const text = item.textContent.trim();
-      if (text) {
-        const parsed = parseIngredientText(text);
-        ingredients.push(parsed);
-      }
-    }
+    const ingredient = {
+      amount: amountEl ? amountEl.textContent.trim() : '',
+      unit: unitEl ? unitEl.textContent.trim() : '',
+      name: nameEl ? nameEl.textContent.trim() : '',
+      notes: notesEl ? notesEl.textContent.trim() : '',
+      original: item.textContent.trim(),
+      originalAmount: amountEl ? amountEl.textContent.trim() : '',
+      originalUnit: unitEl ? unitEl.textContent.trim() : ''
+    };
+    
+    ingredients.push(ingredient);
   });
   
   return ingredients;
