@@ -350,9 +350,8 @@ function setMultiplier(multiplier, updateRecipe = true) {
 }
 
 /**
- * Send ingredients to Instacart using bridge page
+ * Send ingredients to Instacart
  */
-
 async function sendToInstacart() {
   if (!currentRecipe) {
     showNotification('No recipe loaded. Please extract a recipe first.');
