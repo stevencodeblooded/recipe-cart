@@ -350,7 +350,7 @@ function setMultiplier(multiplier, updateRecipe = true) {
 }
 
 /**
- * Send ingredients to Instacart
+ * Send ingredients to Instacart with the new improved panel UI
  */
 async function sendToInstacart() {
   if (!currentRecipe) {
@@ -394,22 +394,24 @@ async function sendToInstacart() {
       throw new Error('No ingredients selected.');
     }
     
+    // Clear any previous checked ingredients
+    chrome.storage.local.remove(['checkedIngredients']);
+    
     // Store the search terms in local storage for the content script to access
     chrome.storage.local.set({
-      instacartSearchTerms: searchTerms,
-      instacartCurrentIndex: 0
+      instacartSearchTerms: searchTerms
     });
     
-    // Create a tab for the first search
+    // Create a tab for Instacart main page 
     chrome.tabs.create({
-      url: `https://www.instacart.com/store/search/${searchTerms[0]}`
+      url: 'https://www.instacart.com/store/'
     });
     
     // Update success state message
     showState(successState);
     const successElement = document.querySelector('#success-state p');
     if (successElement) {
-      successElement.textContent = `Add each item to your cart. After adding each item, you'll automatically see the next search.`;
+      successElement.textContent = `Ingredients have been sent to Instacart. Use the floating panel to easily add each item to your cart.`;
     }
     
   } catch (error) {

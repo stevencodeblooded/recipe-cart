@@ -48,9 +48,10 @@ export function calculateQuantity(ingredient, multiplier) {
  * @param {Array} ingredients - List of ingredients to add
  * @param {string} measurementSystem - 'us' or 'metric'
  * @param {number} multiplier - Recipe multiplier (1, 2, or 3)
+ * @param {boolean} batchMode - Whether to use batch mode (true) or sequential mode (false)
  * @returns {Promise} Promise resolving to success status
  */
-export async function addToInstacart(ingredients, measurementSystem, multiplier) {
+export async function addToInstacart(ingredients, measurementSystem, multiplier, batchMode = true) {
   try {
     // Format ingredients for Instacart
     const formattedItems = ingredients.map(ingredient => ({
@@ -61,8 +62,29 @@ export async function addToInstacart(ingredients, measurementSystem, multiplier)
     // Premium features: Map specific products to general ingredients
     const mappedItems = mapToInstacartProducts(formattedItems);
     
-    // Create Instacart cart URL with parameters
-    const instacartUrl = createInstacartUrl(mappedItems);
+    // Extract just the search queries
+    const searchQueries = mappedItems.map(item => encodeURIComponent(item.query));
+    
+    // Save to storage for batch processing
+    await new Promise((resolve) => {
+      chrome.storage.local.set({
+        instacartSearchTerms: searchQueries,
+        instacartCurrentIndex: 0,
+        instacartBatchMode: batchMode,
+        itemAddedToCart: false
+      }, resolve);
+    });
+    
+    // Set up initial URL depending on mode
+    let instacartUrl;
+    
+    if (batchMode) {
+      // In batch mode, just go to the main store page to start
+      instacartUrl = 'https://www.instacart.com/store/';
+    } else {
+      // In sequential mode, start with the first item
+      instacartUrl = `https://www.instacart.com/store/search/${searchQueries[0]}`;
+    }
     
     // Open Instacart in a new tab
     chrome.tabs.create({ url: instacartUrl });
@@ -73,7 +95,8 @@ export async function addToInstacart(ingredients, measurementSystem, multiplier)
     return { 
       success: true, 
       itemCount: mappedItems.length, 
-      url: instacartUrl 
+      url: instacartUrl,
+      batchMode: batchMode
     };
   } catch (error) {
     console.error('Error adding to Instacart:', error);
