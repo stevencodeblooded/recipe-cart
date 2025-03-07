@@ -733,3 +733,94 @@
   flex-basis: 100%;
   padding-left: 90px; /* Align with label */
 }
+
+/* Service Selection Styles */
+.service-selection {
+  margin: 12px 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.service-selection label {
+  margin-right: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.service-selector {
+  flex: 1;
+  padding: 8px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  background-color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.service-selector:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+/* Service Icons */
+.service-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* Service Links */
+.service-links {
+  margin: 15px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.service-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  text-decoration: none;
+  color: var(--text-color);
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.service-link:hover {
+  background-color: var(--background-light);
+  transform: translateY(-1px);
+}
+
+.service-link img {
+  margin-right: 8px;
+}
+
+/* Service-specific colors */
+.service-instacart {
+  border-left: 4px solid #43B02A;
+}
+
+.service-amazon {
+  border-left: 4px solid #FF9900;
+}
+
+.service-ubereats {
+  border-left: 4px solid #06C167;
+}
+
+/* App Info */
+.app-info {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-light);
+}

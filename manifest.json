@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "RecipeCart",
-  "version": "1.0.0",
-  "description": "Extract recipe ingredients from any website and send them to Instacart with one click",
+  "version": "1.1.0",
+  "description": "Extract recipe ingredients from any website and send them to Instacart, Amazon Fresh, or Uber Eats",
   "permissions": [
     "activeTab",
     "storage",
@@ -36,6 +36,14 @@
     {
       "matches": ["*://*.instacart.com/*"],
       "js": ["content/instacart-content.js"]
+    },
+    {
+      "matches": ["*://*.amazon.com/*"],
+      "js": ["content/amazon-content.js"]
+    },
+    {
+      "matches": ["*://*.ubereats.com/*"],
+      "js": ["content/ubereats-content.js"]
     },
     {
       "matches": ["<all_urls>"],

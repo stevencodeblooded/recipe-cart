@@ -4,12 +4,13 @@
  */
 
 import { formatIngredient } from '../utils/parser.js';
-import { saveRecipe, getSavedRecipes, deleteRecipe, getPreferences, savePreferences } from '../utils/storage.js';
+import { getPreferences, savePreferences } from '../utils/storage.js';
 
 // State variables
 let currentRecipe = null;
 let currentMeasurementSystem = 'us'; // 'us' or 'metric'
 let currentMultiplier = 1; // 1x, 2x, or 3x
+let currentService = 'instacart'; // 'instacart', 'amazon', or 'ubereats'
 let isPremium = false; // Premium status
 
 // DOM Elements
@@ -19,26 +20,22 @@ const errorState = document.getElementById('error-state');
 const recipeState = document.getElementById('recipe-state');
 const successState = document.getElementById('success-state');
 const premiumPromoState = document.getElementById('premium-promo-state');
-const savedRecipesModal = document.getElementById('saved-recipes-modal');
 const notificationToast = document.getElementById('notification-toast');
 
 const errorMessage = document.getElementById('error-message');
 const recipeTitle = document.getElementById('recipe-title');
 const ingredientsList = document.getElementById('ingredients-list');
-const savedRecipesList = document.getElementById('saved-recipes-list');
-const noSavedRecipes = document.getElementById('no-saved-recipes');
 const notificationMessage = document.getElementById('notification-message');
+const serviceSelector = document.getElementById('service-selector');
+const serviceLinks = document.getElementById('service-links');
 
 // Buttons
 const extractBtn = document.getElementById('extract-btn');
 const tryAgainBtn = document.getElementById('try-again-btn');
-const sendToInstacartBtn = document.getElementById('send-to-instacart-btn');
+const sendToServiceBtn = document.getElementById('send-to-service-btn');
 const copyAllBtn = document.getElementById('copy-all-btn');
-const saveRecipeBtn = document.getElementById('save-recipe-btn');
 const resetBtn = document.getElementById('reset-btn');
 const backToRecipeBtn = document.getElementById('back-to-recipe-btn');
-const savedRecipesBtn = document.getElementById('saved-recipes-btn');
-const closeModalBtn = document.getElementById('close-modal-btn');
 const closeNotificationBtn = document.getElementById('close-notification-btn');
 const upgradeBtn = document.getElementById('upgrade-btn');
 const premiumCloseBtn = document.getElementById('premium-close-btn');
@@ -47,6 +44,13 @@ const premiumCloseBtn = document.getElementById('premium-close-btn');
 const toggleUs = document.getElementById('toggle-us');
 const toggleMetric = document.getElementById('toggle-metric');
 const multiplierBtns = document.querySelectorAll('.multiplier-btn');
+
+// Service URLs - base URLs for each service
+const serviceURLs = {
+  instacart: 'https://www.instacart.com/store/',
+  amazon: 'https://www.amazon.com',
+  ubereats: 'https://www.ubereats.com/search'
+};
 
 // Initialize the popup
 document.addEventListener('DOMContentLoaded', async () => {
@@ -69,10 +73,19 @@ async function initializePopup() {
       const prefs = prefResponse.preferences;
       currentMeasurementSystem = prefs.defaultMeasurementSystem || 'us';
       currentMultiplier = prefs.defaultMultiplier || 1;
+      currentService = prefs.defaultService || 'instacart';
       
       // Update UI to reflect preferences
       setMeasurementSystem(currentMeasurementSystem, false);
       setMultiplier(currentMultiplier, false);
+      
+      // Set service selector
+      if (serviceSelector) {
+        serviceSelector.value = currentService;
+      }
+      
+      // Update send button text
+      updateSendButtonText();
     }
     
     // Show loading state while initializing
@@ -119,14 +132,11 @@ function setupEventListeners() {
     showState(initialState);
   });
   
-  // Send to Instacart button
-  sendToInstacartBtn.addEventListener('click', sendToInstacart);
+  // Send to service button
+  sendToServiceBtn.addEventListener('click', sendToService);
   
   // Copy all button
   copyAllBtn.addEventListener('click', copyAllIngredients);
-  
-  // Save recipe button
-  saveRecipeBtn.addEventListener('click', handleSaveRecipe);
   
   // Reset button
   resetBtn.addEventListener('click', resetExtraction);
@@ -135,12 +145,6 @@ function setupEventListeners() {
   backToRecipeBtn.addEventListener('click', () => {
     showState(recipeState);
   });
-  
-  // Saved recipes button
-  savedRecipesBtn.addEventListener('click', openSavedRecipesModal);
-  
-  // Close modal button
-  closeModalBtn.addEventListener('click', closeSavedRecipesModal);
   
   // Close notification button
   closeNotificationBtn.addEventListener('click', hideNotification);
@@ -162,6 +166,31 @@ function setupEventListeners() {
       setMultiplier(multiplier);
     });
   });
+  
+  // Service selector
+  serviceSelector.addEventListener('change', () => {
+    currentService = serviceSelector.value;
+    updateSendButtonText();
+    
+    // Save preference
+    savePreferences({
+      defaultService: currentService
+    });
+  });
+}
+
+/**
+ * Update the send button text based on selected service
+ */
+function updateSendButtonText() {
+  const serviceNames = {
+    'instacart': 'Instacart',
+    'amazon': 'Amazon Fresh',
+    'ubereats': 'Uber Eats'
+  };
+  
+  const serviceName = serviceNames[currentService] || 'Service';
+  sendToServiceBtn.innerHTML = `<span class="btn-icon">🛒</span> Send to ${serviceName}`;
 }
 
 /**
@@ -350,9 +379,9 @@ function setMultiplier(multiplier, updateRecipe = true) {
 }
 
 /**
- * Send ingredients to Instacart with the new improved panel UI
+ * Send ingredients to the selected service
  */
-async function sendToInstacart() {
+async function sendToService() {
   if (!currentRecipe) {
     showNotification('No recipe loaded. Please extract a recipe first.');
     return;
@@ -397,26 +426,71 @@ async function sendToInstacart() {
     // Clear any previous checked ingredients
     chrome.storage.local.remove(['checkedIngredients']);
     
-    // Store the search terms in local storage for the content script to access
+    // Store the search terms and service in local storage for the content script to access
     chrome.storage.local.set({
-      instacartSearchTerms: searchTerms
+      instacartSearchTerms: searchTerms,
+      amazonSearchTerms: searchTerms,
+      ubereatsSearchTerms: searchTerms,
+      currentService: currentService
     });
     
-    // Create a tab for Instacart main page 
+    // Determine which service URL to use
+    let serviceURL;
+    switch (currentService) {
+      case 'amazon':
+        serviceURL = 'https://www.amazon.com';
+        break;
+      case 'ubereats':
+        serviceURL = 'https://www.ubereats.com/ke/feed';
+        break;
+      case 'instacart':
+      default:
+        serviceURL = 'https://www.instacart.com/store/';
+        break;
+    }
+    
+    // Create a tab for the selected service
     chrome.tabs.create({
-      url: 'https://www.instacart.com/store/'
+      url: serviceURL
     });
+    
+    // Update success state with service-specific links
+    serviceLinks.innerHTML = '';
+    
+    const createServiceLink = (service, name, url) => {
+      const link = document.createElement('a');
+      link.href = url;
+      link.className = `service-link service-${service}`;
+      link.target = '_blank';
+      link.textContent = name;
+      serviceLinks.appendChild(link);
+    };
+    
+    // Add links based on selected service
+    switch (currentService) {
+      case 'amazon':
+        createServiceLink('amazon', 'Go to Amazon Fresh Cart', 'https://www.amazon.com/gp/cart/view.html');
+        break;
+      case 'ubereats':
+        createServiceLink('ubereats', 'Go to Uber Eats Cart', 'https://www.ubereats.com/checkout');
+        break;
+      case 'instacart':
+      default:
+        createServiceLink('instacart', 'Go to Instacart Cart', 'https://www.instacart.com/store/cart');
+        break;
+    }
     
     // Update success state message
     showState(successState);
     const successElement = document.querySelector('#success-state p');
     if (successElement) {
-      successElement.textContent = `Ingredients have been sent to Instacart. Use the floating panel to easily add each item to your cart.`;
+      successElement.textContent = `Ingredients have been sent to ${currentService === 'instacart' ? 'Instacart' : 
+                                   currentService === 'amazon' ? 'Amazon Fresh' : 'Uber Eats'}. Use the floating panel to easily add each item to your cart.`;
     }
     
   } catch (error) {
-    console.error('Instacart error:', error);
-    showErrorState(error.message || 'Failed to start Instacart shopping.');
+    console.error('Service error:', error);
+    showErrorState(error.message || `Failed to start ${currentService} shopping.`);
   }
 }
 
@@ -456,41 +530,6 @@ async function copyAllIngredients() {
 }
 
 /**
- * Save the current recipe
- */
-async function handleSaveRecipe() {
-  if (!currentRecipe) {
-    showNotification('No recipe loaded. Please extract a recipe first.');
-    return;
-  }
-  
-  try {
-    // Make a copy of the recipe with current settings
-    const recipeToSave = {
-      ...currentRecipe,
-      savedAt: Date.now(),
-      preferredSystem: currentMeasurementSystem,
-      preferredMultiplier: currentMultiplier
-    };
-    
-    // Send to background script to save
-    const response = await chrome.runtime.sendMessage({
-      action: 'saveRecipe',
-      recipe: recipeToSave
-    });
-    
-    if (response && response.success) {
-      showNotification('Recipe saved successfully!');
-    } else {
-      throw new Error(response.error || 'Failed to save recipe.');
-    }
-  } catch (error) {
-    console.error('Save error:', error);
-    showNotification('Failed to save recipe.');
-  }
-}
-
-/**
  * Reset the extraction state
  */
 function resetExtraction() {
@@ -507,115 +546,6 @@ function resetExtraction() {
   
   // Show initial state
   showState(initialState);
-}
-
-/**
- * Open the saved recipes modal
- */
-async function openSavedRecipesModal() {
-  try {
-    // Get saved recipes
-    const savedRecipes = await getSavedRecipes();
-    
-    if (savedRecipes.length === 0) {
-      // No saved recipes
-      noSavedRecipes.classList.remove('hidden');
-      savedRecipesList.classList.add('hidden');
-    } else {
-      // Render saved recipes
-      noSavedRecipes.classList.add('hidden');
-      savedRecipesList.classList.remove('hidden');
-      
-      // Clear existing list
-      savedRecipesList.innerHTML = '';
-      
-      // Add recipe items
-      savedRecipes.forEach(recipe => {
-        const li = document.createElement('li');
-        li.className = 'saved-recipe-item';
-        
-        const titleDiv = document.createElement('div');
-        titleDiv.className = 'saved-recipe-title';
-        titleDiv.textContent = recipe.title;
-        
-        const urlDiv = document.createElement('div');
-        urlDiv.className = 'saved-recipe-url';
-        urlDiv.textContent = recipe.url;
-        
-        // Add delete button
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'saved-recipe-delete';
-        deleteBtn.textContent = '×';
-        deleteBtn.addEventListener('click', async (e) => {
-          e.stopPropagation(); // Prevent loading the recipe when clicking delete
-          
-          try {
-            await deleteRecipe(recipe.id);
-            // Remove from UI
-            li.remove();
-            // If no recipes left, show empty state
-            if (savedRecipesList.children.length === 0) {
-              noSavedRecipes.classList.remove('hidden');
-              savedRecipesList.classList.add('hidden');
-            }
-          } catch (error) {
-            console.error('Delete error:', error);
-            showNotification('Failed to delete recipe.');
-          }
-        });
-        
-        li.appendChild(titleDiv);
-        li.appendChild(urlDiv);
-        li.appendChild(deleteBtn);
-        
-        // Add click handler to load saved recipe
-        li.addEventListener('click', () => {
-          loadSavedRecipe(recipe);
-          closeSavedRecipesModal();
-        });
-        
-        savedRecipesList.appendChild(li);
-      });
-    }
-    
-    // Show modal
-    savedRecipesModal.classList.remove('hidden');
-    setTimeout(() => {
-      savedRecipesModal.classList.add('show');
-    }, 10);
-  } catch (error) {
-    console.error('Modal error:', error);
-    showNotification('Failed to load saved recipes.');
-  }
-}
-
-/**
- * Close the saved recipes modal
- */
-function closeSavedRecipesModal() {
-  savedRecipesModal.classList.remove('show');
-  setTimeout(() => {
-    savedRecipesModal.classList.add('hidden');
-  }, 300);
-}
-
-/**
- * Load a saved recipe
- */
-function loadSavedRecipe(recipe) {
-  currentRecipe = recipe;
-  
-  // Apply saved preferences if available
-  if (recipe.preferredSystem) {
-    setMeasurementSystem(recipe.preferredSystem, false);
-  }
-  
-  if (recipe.preferredMultiplier) {
-    setMultiplier(recipe.preferredMultiplier, false);
-  }
-  
-  renderRecipe(recipe);
-  showState(recipeState);
 }
 
 /**

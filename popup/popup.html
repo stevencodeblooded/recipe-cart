@@ -62,34 +62,28 @@
           </div>
         </div>
         
-        <!-- Settings Section - Added Batch Mode Toggle -->
-        <!-- <div class="settings-section">
-          <div class="settings-option">
-            <label class="settings-label">Batch Mode:</label>
-            <div class="toggle-container">
-              <input type="checkbox" id="batch-mode-toggle" class="toggle-checkbox" checked>
-              <label for="batch-mode-toggle" class="toggle-label"></label>
-            </div>
-            <div class="setting-description">Adds all ingredients to cart automatically</div>
-          </div>
-        </div> -->
+        <!-- Service Selection -->
+        <div class="service-selection">
+          <label for="service-selector">Send ingredients to:</label>
+          <select id="service-selector" class="service-selector">
+            <option value="instacart">Instacart</option>
+            <option value="amazon">Amazon Fresh</option>
+            <!-- <option value="ubereats">Uber Eats</option> -->
+          </select>
+        </div>
         
         <div class="ingredients-container">
           <ul id="ingredients-list" class="ingredients-list"></ul>
         </div>
 
         <div class="action-buttons">
-          <button id="send-to-instacart-btn" class="primary-btn">
+          <button id="send-to-service-btn" class="primary-btn">
             <span class="btn-icon">🛒</span>
-            Send to Instacart
+            Send to Service
           </button>
           <button id="copy-all-btn" class="secondary-btn">
             <span class="btn-icon">📋</span>
             Copy All
-          </button>
-          <button id="save-recipe-btn" class="secondary-btn">
-            <span class="btn-icon">💾</span>
-            Save Recipe
           </button>
           <button id="reset-btn" class="tertiary-btn">
             <span class="btn-icon">↺</span>
@@ -98,15 +92,15 @@
         </div>
       </div>
 
-      <!-- Update the success state section in popup.html -->
+      <!-- Success State -->
       <div id="success-state" class="state-container hidden">
         <div class="success-state">
           <img src="../assets/success-icon.svg" alt="Success Icon" class="success-icon">
           <h2>Success!</h2>
-          <p>Ingredients have been opened in Instacart search tabs.</p>
-          <a href="https://www.instacart.com/store/cart" target="_blank" class="primary-btn">
-            Go to Instacart Cart
-          </a>
+          <p>Ingredients have been opened in service search tabs.</p>
+          <div id="service-links" class="service-links">
+            <!-- Service links will be added dynamically -->
+          </div>
           <button id="back-to-recipe-btn" class="secondary-btn">Back to Recipe</button>
         </div>
       </div>
@@ -147,27 +141,10 @@
 
     <!-- Footer Section -->
     <footer class="app-footer">
-      <div class="saved-recipes-link">
-        <button id="saved-recipes-btn" class="link-btn">Saved Recipes</button>
+      <div class="app-info">
+        <span>RecipeCart</span> <span class="app-version">v1.1.0</span>
       </div>
-      <div class="app-version">v1.0.0</div>
     </footer>
-  </div>
-
-  <!-- Saved Recipes Modal -->
-  <div id="saved-recipes-modal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Saved Recipes</h2>
-        <button id="close-modal-btn" class="close-btn">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div id="no-saved-recipes" class="empty-state">
-          <p>You don't have any saved recipes yet.</p>
-        </div>
-        <ul id="saved-recipes-list" class="saved-recipes-list hidden"></ul>
-      </div>
-    </div>
   </div>
 
   <!-- Notification Toast -->
