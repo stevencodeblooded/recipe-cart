@@ -25,8 +25,20 @@ if (window.location.hostname.includes('amazon.com')) {
       // Decode first if it's URL encoded
       let decoded = decodeURIComponent(ingredient);
       
-      // Remove special characters that cause issues in search URLs
+      // Remove fractions, numbers, and special characters
+      decoded = decoded.replace(/\d+\/\d+|\d+\s+\d+\/\d+|\d+\.\d+|\d+/g, '').trim();
       decoded = decoded.replace(/[()[\]{},;:'"!?]/g, '');
+      
+      // Remove common measurement words
+      const measurementWords = [
+        'cup', 'cups', 'tablespoon', 'tablespoons', 'tbsp', 'teaspoon', 'teaspoons', 'tsp',
+        'ounce', 'ounces', 'oz', 'pound', 'pounds', 'lb', 'gram', 'grams', 'g', 'kg', 'ml', 'l'
+      ];
+      
+      measurementWords.forEach(word => {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        decoded = decoded.replace(regex, '');
+      });
       
       // Replace multiple spaces with a single space
       decoded = decoded.replace(/\s+/g, ' ').trim();

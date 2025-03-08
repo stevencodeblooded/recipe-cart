@@ -25,8 +25,20 @@ if (window.location.hostname.includes('ubereats.com')) {
       // Decode first if it's URL encoded
       let decoded = decodeURIComponent(ingredient);
       
-      // Remove special characters that cause issues in search URLs
+      // Remove fractions, numbers, and special characters
+      decoded = decoded.replace(/\d+\/\d+|\d+\s+\d+\/\d+|\d+\.\d+|\d+/g, '').trim();
       decoded = decoded.replace(/[()[\]{},;:'"!?]/g, '');
+      
+      // Remove common measurement words
+      const measurementWords = [
+        'cup', 'cups', 'tablespoon', 'tablespoons', 'tbsp', 'teaspoon', 'teaspoons', 'tsp',
+        'ounce', 'ounces', 'oz', 'pound', 'pounds', 'lb', 'gram', 'grams', 'g', 'kg', 'ml', 'l'
+      ];
+      
+      measurementWords.forEach(word => {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        decoded = decoded.replace(regex, '');
+      });
       
       // Replace multiple spaces with a single space
       decoded = decoded.replace(/\s+/g, ' ').trim();
@@ -63,23 +75,43 @@ if (window.location.hostname.includes('ubereats.com')) {
     }
   
     /**
-     * Check if cart is currently open
-     */
+   * Improved checkCartState function for Uber Eats
+   * Replace the current checkCartState function with this one
+   */
     function checkCartState() {
-      // Method 1: Check for Uber Eats cart elements
-      const cartButton = document.querySelector('[data-test="cart-button"], [aria-label*="cart"], [data-baseweb="button"][aria-label*="Cart"]');
+      // Method 1: Check for Uber Eats cart drawer based on the HTML structure you provided
+      const cartDrawer = document.querySelector('div[data-test="cart"], [aria-modal="true"][role="dialog"]');
       
-      // Method 2: Check if the cart drawer is visible
-      const cartDrawer = document.querySelector('[data-test="cart-drawer"], [role="dialog"][aria-label*="cart"]');
+      // Method 2: Check for cart close button which only exists when cart is open
+      const closeCartButton = document.querySelector('[data-testid="close-button"], [data-baseweb="button"][aria-label="Close"]');
+      
+      // Method 3: Look for specific elements from your HTML structure
+      const cartHeader = document.querySelector('div[data-test="cart-header"]');
       
       // Update state based on checks
       const wasCartOpen = isCartOpen;
-      isCartOpen = !!(cartDrawer && getComputedStyle(cartDrawer).display !== 'none');
+      isCartOpen = !!(cartDrawer || closeCartButton || cartHeader);
+      
+      console.log('RecipeCart: Checking cart state, isCartOpen:', isCartOpen);
       
       // Only update UI if state changed
       if (wasCartOpen !== isCartOpen) {
         updateCartButtonStates();
         console.log('RecipeCart: Cart state changed to', isCartOpen ? 'open' : 'closed');
+        
+        // If cart was opened, hide the panel and show minimized indicator
+        if (isCartOpen) {
+          const panel = document.getElementById('recipe-cart-panel');
+          const minimizedIndicator = document.getElementById('recipe-cart-minimized');
+          
+          if (panel && minimizedIndicator) {
+            panel.style.transform = 'translateX(350px)';
+            setTimeout(() => {
+              panel.style.display = 'none';
+              minimizedIndicator.style.display = 'block';
+            }, 300);
+          }
+        }
       }
     }
     
@@ -486,18 +518,60 @@ if (window.location.hostname.includes('ubereats.com')) {
       });
       
       viewCartBtn.addEventListener('click', () => {
-        // For Uber Eats, navigate to checkout page
-        window.location.href = 'https://www.ubereats.com/checkout';
+        // First, find the Uber Eats cart button
+        const uberEatsCartButton = document.querySelector('[aria-label="checkout"], [data-baseweb="button"][aria-label="Cart"], button[data-testid="cart-button"]');
+        
+        if (uberEatsCartButton) {
+          // Click the Uber Eats cart button to show the cart modal
+          uberEatsCartButton.click();
+          console.log('RecipeCart: Clicking Uber Eats cart button');
+          
+          // Hide the panel and show the minimized indicator
+          panel.style.transform = 'translateX(350px)';
+          setTimeout(() => {
+            panel.style.display = 'none';
+            minimizedIndicator.style.display = 'block';
+          }, 300);
+          
+          // Update cart state
+          isCartOpen = true;
+          updateCartButtonStates();
+        } else {
+          // Fallback: navigate to checkout page if button not found
+          console.log('RecipeCart: Cart button not found, navigating to checkout');
+          window.location.href = 'https://www.ubereats.com/checkout';
+        }
       });
       
       hideCartBtn.addEventListener('click', () => {
-        // For Uber Eats, try to find and click the close button
-        const closeCartButton = document.querySelector('[aria-label="Close cart"], button[aria-label="Close"]');
+        // For Uber Eats, try to find and click the close button on the cart modal
+        // Based on your HTML structure, we need to look for the "Close" button
+        const closeCartButton = document.querySelector('[data-baseweb="button"][aria-label="Close"], [data-testid="close-button"], button[aria-label="Close"]');
+        
         if (closeCartButton) {
+          console.log('RecipeCart: Found and clicking close cart button');
           closeCartButton.click();
+          
+          // Update cart state
+          isCartOpen = false;
+          updateCartButtonStates();
         } else {
-          // Fallback: navigate back to previous page
-          window.history.back();
+          // If close button not found, try alternative selectors
+          const alternativeCloseButton = document.querySelector('.yn .yp button, [role="dialog"] button:first-child');
+          if (alternativeCloseButton) {
+            console.log('RecipeCart: Found alternative close button');
+            alternativeCloseButton.click();
+          } else {
+            // Fallback: press Escape key to close modal
+            console.log('RecipeCart: No close button found, sending Escape key');
+            document.dispatchEvent(new KeyboardEvent('keydown', {
+              key: 'Escape',
+              code: 'Escape',
+              keyCode: 27,
+              which: 27,
+              bubbles: true
+            }));
+          }
         }
       });
     }

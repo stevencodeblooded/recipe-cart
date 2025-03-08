@@ -267,6 +267,16 @@ async function extractIngredients() {
 function renderRecipe(recipe) {
   // Set recipe title
   recipeTitle.textContent = recipe.title || 'Recipe Ingredients';
+
+  // Show or hide multiplier controls based on recipe data
+  const multiplierControls = document.querySelector('.multiplier-controls');
+  if (recipe.multiplier && recipe.multiplier > 0) {
+    // Recipe has multiplier, show controls
+    multiplierControls.style.display = 'flex';
+  } else {
+    // Recipe doesn't have multiplier, hide controls
+    multiplierControls.style.display = 'none';
+  }
   
   // Clear existing ingredient list
   ingredientsList.innerHTML = '';

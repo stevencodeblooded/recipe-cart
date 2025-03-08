@@ -25,7 +25,7 @@ function extractRecipeIngredients() {
     title: extractRecipeTitle(),
     ingredients: [],
     url: window.location.href,
-    measurementSystem: detectMeasurementSystem(),
+    measurementSystem: 'original', // Default to 'original' to preserve units,
     multiplier: detectMultiplier()
   };
 
@@ -566,7 +566,9 @@ function parseIngredientText(text) {
     unit: unit.value,
     name: name,
     notes: notes,
-    original: text
+    original: text,
+    originalAmount: amount.value,  // Store original amount
+    originalUnit: unit.value       // Store original unit
   };
 }
 
@@ -745,51 +747,46 @@ function detectMeasurementSystem() {
  */
 function detectMultiplier() {
   try {
-    // Look for multiplier buttons
+    // Method 1: Look for multiplier buttons
     const buttons = document.querySelectorAll('[data-multiplier], [data-servings-multiplier]');
-    
-    for (const button of buttons) {
-      if (button.classList.contains('active') || button.getAttribute('aria-selected') === 'true') {
-        const multiplier = button.getAttribute('data-multiplier') || button.getAttribute('data-servings-multiplier');
-        if (multiplier) {
-          return parseInt(multiplier, 10);
+    if (buttons.length > 0) {
+      for (const button of buttons) {
+        if (button.classList.contains('active') || button.getAttribute('aria-selected') === 'true') {
+          const multiplier = button.getAttribute('data-multiplier') || button.getAttribute('data-servings-multiplier');
+          if (multiplier) {
+            return parseInt(multiplier, 10);
+          }
         }
       }
+      
+      // If we found buttons but no active one, at least we know the recipe has multipliers
+      return 1;
     }
     
-    // Look for buttons with text like "1x", "2x", etc.
+    // Method 2: Look for buttons with text like "1x", "2x", etc.
     const multiplierButtons = Array.from(document.querySelectorAll('button')).filter(b => 
       /^[1-9]x$/i.test(b.textContent.trim())
     );
     
-    for (const button of multiplierButtons) {
-      if (button.classList.contains('active') || button.getAttribute('aria-selected') === 'true') {
-        const multiplier = parseInt(button.textContent.trim().replace('x', ''), 10);
-        if (!isNaN(multiplier)) {
-          return multiplier;
+    if (multiplierButtons.length > 0) {
+      for (const button of multiplierButtons) {
+        if (button.classList.contains('active') || button.getAttribute('aria-selected') === 'true') {
+          const multiplier = parseInt(button.textContent.trim().replace('x', ''), 10);
+          if (!isNaN(multiplier)) {
+            return multiplier;
+          }
         }
       }
+      
+      // If we found buttons but no active one, at least we know the recipe has multipliers
+      return 1;
     }
     
-    // Check for active spans or divs with multiplier text
-    const multiplierElements = Array.from(document.querySelectorAll('span, div')).filter(el => 
-      /^[1-9]x$/i.test(el.textContent.trim())
-    );
-    
-    for (const element of multiplierElements) {
-      if (element.classList.contains('active') || element.classList.contains('selected')) {
-        const multiplier = parseInt(element.textContent.trim().replace('x', ''), 10);
-        if (!isNaN(multiplier)) {
-          return multiplier;
-        }
-      }
-    }
-    
-    // Default to 1x
-    return 1;
+    // If we didn't find any multiplier controls, return 0 to indicate not supported
+    return 0;
   } catch (e) {
     console.log('Error detecting multiplier:', e);
-    return 1; // Default to 1x
+    return 0; // Indicate not supported
   }
 }
 

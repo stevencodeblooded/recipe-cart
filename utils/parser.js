@@ -143,17 +143,54 @@ export function parseAmount(amount) {
   // Ensure amount is a string
   const amountStr = String(amount);
   
+  // Check for range formats
+  // e.g., "3 to 3 ½" or "3-4" or "3 - 4"
+  const toRangeMatch = amountStr.match(/(\d+(?:\.\d+)?(?:\s+\d+\/\d+)?|\d+[½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]?)\s+to\s+(\d+(?:\.\d+)?(?:\s+\d+\/\d+)?|\d+[½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]?)/i);
+  const dashRangeMatch = amountStr.match(/(\d+(?:\.\d+)?(?:\s+\d+\/\d+)?|\d+[½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]?)\s*-\s*(\d+(?:\.\d+)?(?:\s+\d+\/\d+)?|\d+[½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]?)/);
+  
+  if (toRangeMatch || dashRangeMatch) {
+    const match = toRangeMatch || dashRangeMatch;
+    // Process both parts of the range separately
+    const minStr = match[1];
+    const maxStr = match[2];
+    
+    // Parse each part as a simple amount
+    const minValue = parseSimpleAmount(minStr);
+    const maxValue = parseSimpleAmount(maxStr);
+    
+    // Return a range object
+    return {
+      isRange: true,
+      min: minValue,
+      max: maxValue,
+      original: amountStr
+    };
+  }
+  
+  // Not a range, parse as normal amount
+  return parseSimpleAmount(amountStr);
+}
+
+/**
+ * Parse a simple (non-range) amount string
+ * @private
+ * @param {string} amountStr - The amount string to parse
+ * @returns {number} The numeric value
+ */
+function parseSimpleAmount(amountStr) {
   // Handle Unicode fraction characters
   let processedAmount = amountStr;
-  for (const [fraction, value] of Object.entries(unicodeFractions)) {
-    if (processedAmount.includes(fraction)) {
-      // Handle cases like "1½" (mixed numbers)
-      const mixedMatch = processedAmount.match(new RegExp(`(\\d+)\\s*${fraction}`));
+  
+  // Look for Unicode fractions in the string
+  for (const [fraction, unicode] of Object.entries(unicodeFractions)) {
+    if (processedAmount.includes(unicode)) {
+      // For mixed numbers like "1½"
+      const mixedMatch = processedAmount.match(new RegExp(`(\\d+)${unicode}`));
       if (mixedMatch) {
         return parseInt(mixedMatch[1], 10) + parseFloat(fraction);
       }
-      // Handle simple fractions
-      processedAmount = processedAmount.replace(fraction, value.toString());
+      // For just the fraction
+      processedAmount = processedAmount.replace(unicode, fraction);
     }
   }
   
@@ -173,12 +210,6 @@ export function parseAmount(amount) {
   if (mixedMatch) {
     return parseInt(mixedMatch[1], 10) + 
            (parseInt(mixedMatch[2], 10) / parseInt(mixedMatch[3], 10));
-  }
-  
-  // Handle ranges like "1-2" (take the average)
-  const rangeMatch = processedAmount.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/);
-  if (rangeMatch) {
-    return (parseFloat(rangeMatch[1]) + parseFloat(rangeMatch[2])) / 2;
   }
   
   // Can't parse
@@ -223,8 +254,12 @@ export function formatAmount(amount, originalFormat = null) {
     }
   }
   
-  // Otherwise return as decimal
-  return rounded.toString();
+  // For values that aren't close to common fractions, format with 1 or 2 decimal places
+  if (fractional < 0.1) {
+    return rounded.toFixed(1);
+  }
+  
+  return rounded.toFixed(2);
 }
 
 /**
@@ -448,17 +483,36 @@ function convertMetricToUS(amount, unit) {
  * @returns {string} The adjusted amount
  */
 export function adjustAmount(amount, multiplier) {
-  // Parse the amount to a number
-  const numericAmount = parseAmount(amount);
+  // Parse the amount
+  const parsedAmount = parseAmount(amount);
   
-  if (isNaN(numericAmount)) {
+  // Check if we have a range object
+  if (typeof parsedAmount === 'object' && parsedAmount.isRange) {
+    // Multiply both min and max values
+    const adjustedMin = parsedAmount.min * multiplier;
+    const adjustedMax = parsedAmount.max * multiplier;
+    
+    // Format both values
+    const formattedMin = formatAmount(adjustedMin);
+    const formattedMax = formatAmount(adjustedMax);
+    
+    // Recreate the range with the same format as the original
+    if (amount.includes(' to ')) {
+      return `${formattedMin} to ${formattedMax}`;
+    } else {
+      return `${formattedMin}-${formattedMax}`;
+    }
+  }
+  
+  // Not a range, or couldn't parse
+  if (isNaN(parsedAmount)) {
     return amount; // Return original if can't parse
   }
   
-  // Apply multiplier
-  const adjustedAmount = numericAmount * multiplier;
+  // Apply multiplier to regular value
+  const adjustedAmount = parsedAmount * multiplier;
   
-  // Format back to string
+  // Format the result, preserving original format if available
   return formatAmount(adjustedAmount, amount);
 }
 
@@ -477,20 +531,65 @@ export function formatIngredient(ingredient, system, multiplier) {
   
   // Apply the multiplier to the amount regardless of system
   if (formatted.amount) {
-    const numericAmount = parseAmount(formatted.amount);
-    if (!isNaN(numericAmount)) {
-      const scaledAmount = numericAmount * multiplier;
-      formatted.amount = formatAmount(scaledAmount, ingredient.originalAmount || ingredient.amount);
+    // Adjust the amount using our improved function
+    formatted.amount = adjustAmount(formatted.amount, multiplier);
+    
+    // Handle pluralization based on the amount
+    if (formatted.unit) {
+      const parsedAmount = parseAmount(formatted.amount);
+      
+      // Only pluralize for non-range values
+      if (typeof parsedAmount !== 'object') {
+        // Check if we need to pluralize the unit
+        if (!isNaN(parsedAmount) && parsedAmount > 1) {
+          // Pluralize common units
+          if (formatted.unit === 'cup') formatted.unit = 'cups';
+          else if (formatted.unit === 'tablespoon') formatted.unit = 'tablespoons';
+          else if (formatted.unit === 'teaspoon') formatted.unit = 'teaspoons';
+          else if (formatted.unit === 'ounce') formatted.unit = 'ounces';
+          else if (formatted.unit === 'pound') formatted.unit = 'pounds';
+        }
+      }
     }
   }
   
-  // Only convert units if we're changing systems
-  if (system !== originalSystem) {
+  // Skip unit conversion by default - preserve the original units from the recipe
+  // Only convert if explicitly changing measurement systems
+  if (system !== originalSystem && system !== 'original') {
     // Convert to the requested system
     if (formatted.amount && formatted.unit) {
-      const converted = convertMeasurement(formatted.amount, formatted.unit, system);
-      formatted.amount = converted.amount;
-      formatted.unit = converted.unit;
+      const isCountableItem = 
+        !formatted.unit || 
+        ['whole', 'piece', 'pieces', 'lb', 'lbs', 'pound', 'pounds', 'kg', 'chicken', 'onion', 'onions'].includes(
+          formatted.unit.toLowerCase()
+        );
+      
+      // Don't convert units for countable items
+      if (!isCountableItem) {
+        // Handle range conversion
+        const parsedAmount = parseAmount(formatted.amount);
+        
+        if (typeof parsedAmount === 'object' && parsedAmount.isRange) {
+          // Convert min and max values separately
+          const minConverted = convertMeasurement(parsedAmount.min.toString(), formatted.unit, system);
+          const maxConverted = convertMeasurement(parsedAmount.max.toString(), formatted.unit, system);
+          
+          // Use the same unit for both (should be the same anyway)
+          formatted.unit = minConverted.unit;
+          
+          // Recreate the range format
+          if (formatted.amount.includes(' to ')) {
+            formatted.amount = `${minConverted.amount} to ${maxConverted.amount}`;
+          } else {
+            formatted.amount = `${minConverted.amount}-${maxConverted.amount}`;
+          }
+        } else {
+          // Regular conversion
+          const converted = convertMeasurement(formatted.amount, formatted.unit, system);
+          formatted.amount = converted.amount;
+          formatted.unit = converted.unit;
+        }
+      }
     }
   }
   
